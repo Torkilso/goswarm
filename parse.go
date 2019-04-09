@@ -47,7 +47,7 @@ func parseFile(problem int) (numMachines int, jobs []Job) {
 	numMachines = readNumber(counts[1])
 
 
-	// Read vehicle data
+	// Read data
 	jobInfoCount := 0
 
 	for scanner.Scan() {

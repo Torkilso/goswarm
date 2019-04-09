@@ -2,12 +2,14 @@ package main
 
 
 type Score struct {
-	cost float64
 	position float64
+	velocity float64
+	cost 	 float64
 }
 type Particle struct {
 	personalBest Score
 	score Score
+	genotype Genotype
 
 }
 
@@ -16,4 +18,11 @@ type Swarm = struct {
 	globalBest Score
 }
 
-type Genotypes = [][]float64
+type Genotype = []float64
+
+type DiscreteGenotype = []int
+
+type Phenotype = struct {
+
+}
+
