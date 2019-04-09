@@ -1,12 +1,8 @@
 package main
 
-import "log"
-
 func main() {
-	numMachines, jobs := parseFile(1)
-
-	log.Println(numMachines, jobs)
+	problem := parseFile(1)
 
 
-	particleSwarmOptimization()
+	particleSwarmOptimization(problem, 100, 100)
 }

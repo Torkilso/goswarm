@@ -28,9 +28,9 @@ func readNumber(lineNumber string) int {
 	return int(number)
 }
 
-func parseFile(problem int) (numMachines int, jobs []Job) {
+func parseFile(problem int) *Problem {
 	pwd, _ := os.Getwd()
-	file, err := os.Open(pwd + "/data/" + strconv.Itoa(problem) + ".txt")
+	file, err := os.Open(pwd + "/Test data/" + strconv.Itoa(problem) + ".txt")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,12 +44,12 @@ func parseFile(problem int) (numMachines int, jobs []Job) {
 	scanner.Scan()
 	counts := strings.Fields(scanner.Text())
 	numJobs := readNumber(counts[0])
-	numMachines = readNumber(counts[1])
+	numMachines := readNumber(counts[1])
 
 
 	// Read data
 	jobInfoCount := 0
-
+	var jobs []Job
 	for scanner.Scan() {
 		jobInfo := strings.Fields(scanner.Text())
 		log.Println("jobInfo", jobInfo)
@@ -69,5 +69,9 @@ func parseFile(problem int) (numMachines int, jobs []Job) {
 		}
 	}
 
-	return
+	return &Problem{
+		numJobs: numJobs,
+		numMachines: numMachines,
+		jobs: jobs,
+	}
 }

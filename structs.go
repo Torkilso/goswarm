@@ -4,7 +4,7 @@ package main
 type Score struct {
 	position float64
 	velocity float64
-	cost 	 float64
+	cost 	 int
 }
 type Particle struct {
 	personalBest Score
@@ -13,10 +13,8 @@ type Particle struct {
 
 }
 
-type Swarm = struct {
-	particles []*Particle
-	globalBest Score
-}
+type Swarm = []*Particle
+
 
 type Genotype = []float64
 
@@ -26,3 +24,8 @@ type Phenotype = struct {
 
 }
 
+
+type Problem = struct {
+	numJobs, numMachines int
+	jobs []Job
+}

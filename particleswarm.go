@@ -2,6 +2,7 @@ package main
 
 import (
 	"math"
+	"math/rand"
 	"sort"
 )
 
@@ -26,28 +27,43 @@ func decodeGenotype(geno Genotype) (encoding DiscreteGenotype) {
 		encoding[decoder.index] = i
 	}
 	return encoding
-
 }
+func discreteGenoToJobs(numJobs int, encoding DiscreteGenotype) []int {
+	jobs := make([]int, len(encoding))
 
-func encodingToPhenotype(encoding DiscreteGenotype) (pheno Phenotype) {
+	for i, val := range encoding {
+		jobs[i] = val % numJobs
+	}
 
-}
-
-
-func initialize(size int) *Swarm{
-
-
-	return nil
+	return jobs
 }
 
 
-func evaluateFitness(swarm *Swarm ) Score {
-	globalBest := Score{cost: -math.MaxFloat64, position: 0.0}
+func initialize(size int) Swarm{
 
-	for _, particle := range swarm.particles {
+	particles := make([]*Particle, size)
+
+	for i := range particles {
+		particles[i].score = Score{
+			position: rand.Float64(),
+			velocity: rand.Float64(),
+		}
+	}
+	return particles
+}
+
+
+func evaluateFitness(p *Problem, swarm Swarm) Score {
+	globalBest := Score{cost: math.MinInt64, position: 0.0}
+
+	for _, particle := range swarm {
 		encoding := decodeGenotype(particle.genotype)
-		phenotype := encodingToPhenotype(encoding)
-		particle.score = Score{cost: cost(&phenotype), position: particle.score.position}
+		phenotype := discreteGenoToJobs(p.numJobs, encoding)
+
+		particle.score = Score{
+			cost: cost(p, phenotype),
+			position: particle.score.position,
+		}
 
 		if globalBest.cost < particle.score.cost {
 			globalBest = particle.score
@@ -58,7 +74,7 @@ func evaluateFitness(swarm *Swarm ) Score {
 
 
 
-func particleSwarmOptimization(size, iterations int){
+func particleSwarmOptimization(p *Problem, size, iterations int){
 
 	// Initialize the populaton
 	swarm := initialize(size)
@@ -70,9 +86,9 @@ func particleSwarmOptimization(size, iterations int){
 
 		// Evaluate fitness and update global best
 
-		globalBest = evaluateFitness(swarm)
+		globalBest = evaluateFitness(p, swarm)
 
-		for _, particle := range swarm.particles {
+		for _, particle := range swarm {
 			// Update personal best
 
 			if particle.score.cost > particle.personalBest.cost {
