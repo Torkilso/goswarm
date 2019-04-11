@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 )
+
 func check(e error) {
 	if e != nil {
 		panic(e)
@@ -14,12 +15,11 @@ func check(e error) {
 }
 
 type WorkLoad struct {
-	machine int
+	machine  int
 	duration int
-
 }
 
-type Job = []*WorkLoad
+type Job []*WorkLoad
 
 func readNumber(lineNumber string) int {
 	number, err := strconv.ParseInt(lineNumber, 10, 64)
@@ -46,19 +46,18 @@ func parseFile(problem int) *Problem {
 	numJobs := readNumber(counts[0])
 	numMachines := readNumber(counts[1])
 
-
-	// Read data
+	// Read Test data
 	jobInfoCount := 0
 	var jobs []Job
 	for scanner.Scan() {
 		jobInfo := strings.Fields(scanner.Text())
 		log.Println("jobInfo", jobInfo)
 
-		for i := 0 ; i < len(jobInfo) - 1 ; i++ {
+		for i := 0; i < len(jobInfo)-1; i += 2 {
 			var job Job
 
 			job = append(job, &WorkLoad{
-				machine: readNumber(jobInfo[i]),
+				machine:  readNumber(jobInfo[i]),
 				duration: readNumber(jobInfo[i+1]),
 			})
 			jobs = append(jobs, job)
@@ -70,8 +69,8 @@ func parseFile(problem int) *Problem {
 	}
 
 	return &Problem{
-		numJobs: numJobs,
+		numJobs:     numJobs,
 		numMachines: numMachines,
-		jobs: jobs,
+		jobs:        jobs,
 	}
 }

@@ -10,6 +10,7 @@ type GenoDecoder struct {
 	index int
 	value float64
 }
+
 func decodeGenotype(geno Genotype) (encoding DiscreteGenotype) {
 	genoDecoder := make([]GenoDecoder, len(geno))
 
@@ -38,8 +39,7 @@ func discreteGenoToJobs(numJobs int, encoding DiscreteGenotype) []int {
 	return jobs
 }
 
-
-func initialize(size int) Swarm{
+func initialize(size int) Swarm {
 
 	particles := make([]*Particle, size)
 
@@ -52,7 +52,6 @@ func initialize(size int) Swarm{
 	return particles
 }
 
-
 func evaluateFitness(p *Problem, swarm Swarm) Score {
 	globalBest := Score{cost: math.MinInt64, position: 0.0}
 
@@ -61,7 +60,7 @@ func evaluateFitness(p *Problem, swarm Swarm) Score {
 		phenotype := discreteGenoToJobs(p.numJobs, encoding)
 
 		particle.score = Score{
-			cost: cost(p, phenotype),
+			cost:     cost(p, phenotype),
 			position: particle.score.position,
 		}
 
@@ -72,9 +71,7 @@ func evaluateFitness(p *Problem, swarm Swarm) Score {
 	return globalBest
 }
 
-
-
-func particleSwarmOptimization(p *Problem, size, iterations int){
+func particleSwarmOptimization(p *Problem, size, iterations int) {
 
 	// Initialize the populaton
 	swarm := initialize(size)
@@ -82,7 +79,7 @@ func particleSwarmOptimization(p *Problem, size, iterations int){
 
 	// Do until stopping condition
 
-	for i := 0 ; i < iterations ; i++ {
+	for i := 0; i < iterations; i++ {
 
 		// Evaluate fitness and update global best
 
@@ -101,6 +98,6 @@ func particleSwarmOptimization(p *Problem, size, iterations int){
 			// Update position
 			particle.score.position = particle.score.position + particle.score.velocity
 
-			}
+		}
 	}
 }
