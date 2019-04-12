@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -19,7 +20,7 @@ type WorkLoad struct {
 	duration int
 }
 
-type Job []*WorkLoad
+type Job []WorkLoad
 
 func readNumber(lineNumber string) int {
 	number, err := strconv.ParseInt(lineNumber, 10, 64)
@@ -46,26 +47,24 @@ func parseFile(problem int) *Problem {
 	numJobs := readNumber(counts[0])
 	numMachines := readNumber(counts[1])
 
+	fmt.Println(counts)
+
 	// Read Test data
-	jobInfoCount := 0
-	var jobs []Job
-	for scanner.Scan() {
+	jobs := make([]Job, numJobs)
+
+	for i := 0; i < numJobs; i++ {
+		scanner.Scan()
 		jobInfo := strings.Fields(scanner.Text())
-		log.Println("jobInfo", jobInfo)
+
+		job := make([]WorkLoad, 0)
 
 		for i := 0; i < len(jobInfo)-1; i += 2 {
-			var job Job
-
-			job = append(job, &WorkLoad{
+			job = append(job, WorkLoad{
 				machine:  readNumber(jobInfo[i]),
 				duration: readNumber(jobInfo[i+1]),
 			})
-			jobs = append(jobs, job)
 		}
-		jobInfoCount++
-		if jobInfoCount >= numJobs {
-			break
-		}
+		jobs[i] = job
 	}
 
 	return &Problem{
