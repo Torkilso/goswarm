@@ -20,11 +20,13 @@ type Phenotype = struct {
 }
 
 type Patch struct {
-	makespan float64
+	makespan int
 	genotype Genotype
 }
 
 type Patches []*Patch
+
+type OperationSequence []int
 
 type Problem = struct {
 	numJobs, numMachines int

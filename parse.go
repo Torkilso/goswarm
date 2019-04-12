@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -47,11 +46,8 @@ func parseFile(problem int) *Problem {
 	numJobs := readNumber(counts[0])
 	numMachines := readNumber(counts[1])
 
-	fmt.Println(counts)
-
 	// Read Test data
 	jobs := make([]Job, numJobs)
-
 	for i := 0; i < numJobs; i++ {
 		scanner.Scan()
 		jobInfo := strings.Fields(scanner.Text())

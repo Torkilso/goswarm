@@ -1,9 +1,11 @@
 package main
 
+var prob *Problem
+
 func main() {
-	//problem := parseFile(1)
+	prob = parseFile(2)
 
 	//particleSwarmOptimization(problem, 100, 100)
-	//solution := BA(problem)
-	//visualizeSolutionAsGant(problem, solution.genotype, "gant.png")
+	solution := BA()
+	visualizeSolutionAsGant(solution.genotype, "gant.png", solution.makespan)
 }

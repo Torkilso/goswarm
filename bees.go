@@ -37,16 +37,19 @@ Difference between value of the first and last iterations diff
 var (
 	beesAmount             = 100 // n
 	bestPatchesAmount      = 10  // m
-	elitePatches           = 5   // e
+	elitePatchesAmount     = 5   // e
 	beesForElitePatches    = 5   // nep
-	beesForNonElitePathces = 5   // nsp
+	beesForNonElitePatches = 5   // nsp
 	neighbourHoodSize      = 5   // ngh
 	beesGenerations        = 100
 )
 
-func (p *Patch) evaluateFitnessValue() {
+func (p *Patch) evaluateFitnessValue() int {
+	decoded := decodeGenotype(p.genotype)
+	operationSequence := discreteGenoToJobs(prob.numJobs, decoded)
+	p.makespan = operationSequence.makespan()
 
-	p.makespan = 1
+	return p.makespan
 }
 
 func (p *Patches) evaluateFitnessValue() {
@@ -72,31 +75,15 @@ func generatePatch(jobs, machines int) *Patch {
 	}
 }
 
-func generatePatches(amount, jobs, machines int) Patches {
+func generatePatches(amount int) Patches {
 	patches := make([]*Patch, amount)
 
 	for i := range patches {
-		patch := generatePatch(jobs, machines)
+		patch := generatePatch(prob.numJobs, prob.numJobs)
 		patches[i] = patch
 	}
 
 	return patches
-}
-
-func (p *Patches) best() Patches {
-	return (*p)[:bestPatchesAmount]
-}
-
-func (p *Patches) nonBest() Patches {
-	return (*p)[bestPatchesAmount:]
-}
-
-func (p *Patches) elites() Patches {
-	return (*p)[:elitePatches]
-}
-
-func (p *Patches) nonElites() Patches {
-	return (*p)[elitePatches:]
 }
 
 func (p *Patch) neighbours() Patches {
@@ -109,8 +96,8 @@ func (p *Patches) neighbours() Patches {
 	// TODO create neighbourhood from each patch
 }
 
-func BA(problem *Problem) Patch {
-	patches := generatePatches(beesAmount, problem.numJobs, problem.numMachines)
+func BA() Patch {
+	patches := generatePatches(beesAmount)
 	patches.evaluateFitnessValue()
 
 	sort.Slice(patches, func(i, j int) bool {
@@ -118,15 +105,15 @@ func BA(problem *Problem) Patch {
 	})
 
 	for i := 0; i <= beesGenerations; i++ {
-		bestPatches := patches.best()
+		bestPatches := patches[:bestPatchesAmount]
 
-		elitePatches := bestPatches.elites()
-		nonElitePatches := bestPatches.nonElites()
+		elitePatches := bestPatches[:elitePatchesAmount]
+		nonElitePatches := bestPatches[elitePatchesAmount:]
 
 		foragerElitePatches := elitePatches.neighbours()
 		foragerNonElitePatches := nonElitePatches.neighbours()
 
-		newPatches := generatePatches(beesAmount-beesForElitePatches-beesForNonElitePathces, problem.numJobs, problem.numMachines)
+		newPatches := generatePatches(beesAmount - beesForElitePatches - beesForNonElitePatches)
 
 		patches = append(foragerElitePatches, foragerNonElitePatches...)
 		patches = append(patches, newPatches...)

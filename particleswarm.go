@@ -3,41 +3,7 @@ package main
 import (
 	"math"
 	"math/rand"
-	"sort"
 )
-
-type GenoDecoder struct {
-	index int
-	value float64
-}
-
-func decodeGenotype(geno Genotype) (encoding DiscreteGenotype) {
-	genoDecoder := make([]GenoDecoder, len(geno))
-
-	for i, val := range geno {
-		genoDecoder[i] = GenoDecoder{index: i, value: val}
-	}
-
-	sort.Slice(genoDecoder, func(i, j int) bool {
-		return genoDecoder[i].value < genoDecoder[j].value
-	})
-
-	encoding = make(DiscreteGenotype, len(geno))
-
-	for i, decoder := range genoDecoder {
-		encoding[decoder.index] = i
-	}
-	return encoding
-}
-func discreteGenoToJobs(numJobs int, encoding DiscreteGenotype) []int {
-	jobs := make([]int, len(encoding))
-
-	for i, val := range encoding {
-		jobs[i] = val % numJobs
-	}
-
-	return jobs
-}
 
 func initialize(size int) Swarm {
 
