@@ -33,8 +33,10 @@ func (s *OperationSequence) makespan() int {
 	}
 
 	for _, operation := range *s {
+
 		operationForJob := jobsSchedules[operation].operationsFinished
 		lastOperationFinishedAt := jobsSchedules[operation].lastOperationFinishedAt
+
 		workload := prob.jobs[operation][operationForJob]
 		machineIdleAt := machinesIdleAt[workload.machine]
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"sort"
 	"time"
@@ -36,12 +37,12 @@ Difference between value of the first and last iterations diff
 
 var (
 	beesAmount             = 100 // n
-	bestPatchesAmount      = 10  // m
-	elitePatchesAmount     = 5   // e
-	beesForElitePatches    = 5   // nep
+	bestPatchesAmount      = 15  // m
+	elitePatchesAmount     = 3   // e
+	beesForElitePatches    = 20  // nep
 	beesForNonElitePatches = 5   // nsp
 	neighbourHoodSize      = 5   // ngh
-	beesGenerations        = 100
+	beesGenerations        = 1000
 )
 
 func (p *Patch) evaluateFitnessValue() int {
@@ -58,11 +59,11 @@ func (p *Patches) evaluateFitnessValue() {
 	}
 }
 
-func generatePatch(jobs, machines int) *Patch {
+func generatePatch(jobs, machines, seed int) *Patch {
 
 	genotype := make([]float64, jobs*machines)
 
-	s1 := rand.NewSource(time.Now().UnixNano())
+	s1 := rand.NewSource(time.Now().UnixNano() + int64(seed))
 	r1 := rand.New(s1)
 
 	for i := range genotype {
@@ -79,24 +80,94 @@ func generatePatches(amount int) Patches {
 	patches := make([]*Patch, amount)
 
 	for i := range patches {
-		patch := generatePatch(prob.numJobs, prob.numJobs)
+		patch := generatePatch(prob.numJobs, prob.numMachines, i)
 		patches[i] = patch
 	}
 
 	return patches
 }
 
-func (p *Patch) neighbours() Patches {
-	return make([]*Patch, 0)
+func (p *Patch) swapMutation(indexA, indexB int) {
+	p.genotype[indexA], p.genotype[indexB] = p.genotype[indexB], p.genotype[indexA]
 }
 
-func (p *Patches) neighbours() Patches {
-	return *p
+func (p *Patch) insertMutation(from, to int) {
 
-	// TODO create neighbourhood from each patch
 }
 
-func BA() Patch {
+func (p *Patch) inversionMutation(index, length int) {
+
+}
+
+func (p *Patch) longDistanceMutation(from, to, length int) {
+
+}
+
+func (p *Patch) neighbour(seed int) *Patch {
+	s1 := rand.NewSource(time.Now().UnixNano() + int64(seed))
+	r1 := rand.New(s1)
+
+	neighbour := Patch{}
+	neighbour.genotype = append([]float64(nil), p.genotype...)
+
+	mutationType := r1.Intn(1)
+
+	// only swap is used at the moment
+	if mutationType == 0 {
+		indexA := r1.Intn(len(neighbour.genotype) - 1)
+		indexB := r1.Intn(len(neighbour.genotype) - 1)
+		neighbour.swapMutation(indexA, indexB)
+	} else if mutationType == 1 {
+		from := r1.Intn(len(neighbour.genotype) - 1)
+		to := r1.Intn(len(neighbour.genotype) - 1)
+		neighbour.insertMutation(from, to)
+	} else if mutationType == 2 {
+		index := r1.Intn(len(neighbour.genotype) - 1)
+		length := r1.Intn(len(neighbour.genotype) - 1)
+		neighbour.inversionMutation(index, length)
+	} else if mutationType == 3 {
+		from := r1.Intn(len(neighbour.genotype) - 1)
+		to := r1.Intn(len(neighbour.genotype) - 1)
+		length := r1.Intn(len(neighbour.genotype) - 1)
+		neighbour.longDistanceMutation(from, to, length)
+	}
+
+	neighbour.evaluateFitnessValue()
+	return &neighbour
+}
+
+func (p *Patch) neighbours(size int) Patches {
+	neighbours := make([]*Patch, size)
+
+	neighbours[0] = p
+
+	for i := 1; i < size; i++ {
+		neighbours[i] = p.neighbour(i)
+		//fmt.Println("makespan", neighbours[i].makespan)
+	}
+
+	return neighbours
+}
+
+func (p *Patches) neighbours(size int) Patches {
+	neighbours := make([]*Patch, 0)
+
+	//fmt.Println("finding neighbours")
+
+	for _, patch := range *p {
+		patchNeighbours := patch.neighbours(size)
+
+		sort.Slice(patchNeighbours, func(i, j int) bool {
+			return (patchNeighbours)[i].makespan < (patchNeighbours)[j].makespan
+		})
+
+		neighbours = append(neighbours, patchNeighbours[0])
+	}
+
+	return neighbours[:len(*p)]
+}
+
+func BA(target int) Patch {
 	patches := generatePatches(beesAmount)
 	patches.evaluateFitnessValue()
 
@@ -105,15 +176,16 @@ func BA() Patch {
 	})
 
 	for i := 0; i <= beesGenerations; i++ {
+
 		bestPatches := patches[:bestPatchesAmount]
 
 		elitePatches := bestPatches[:elitePatchesAmount]
 		nonElitePatches := bestPatches[elitePatchesAmount:]
 
-		foragerElitePatches := elitePatches.neighbours()
-		foragerNonElitePatches := nonElitePatches.neighbours()
+		foragerElitePatches := elitePatches.neighbours(beesForElitePatches)
+		foragerNonElitePatches := nonElitePatches.neighbours(beesForNonElitePatches)
 
-		newPatches := generatePatches(beesAmount - beesForElitePatches - beesForNonElitePatches)
+		newPatches := generatePatches(beesAmount - bestPatchesAmount)
 
 		patches = append(foragerElitePatches, foragerNonElitePatches...)
 		patches = append(patches, newPatches...)
@@ -123,6 +195,14 @@ func BA() Patch {
 		sort.Slice(patches, func(i, j int) bool {
 			return (patches)[i].makespan < (patches)[j].makespan
 		})
+
+		fmt.Printf("\rGeneration %d, best makespan: %d", i, patches[0].makespan)
+
+		// uncomment to exit on target condition
+		/*if patches[0].makespan < target {
+			fmt.Println("\nFound solution below target")
+			return *patches[0]
+		}*/
 	}
 
 	return *patches[0]
