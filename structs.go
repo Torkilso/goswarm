@@ -1,14 +1,10 @@
 package main
 
 
-type Score struct {
-	position float64
-	velocity float64
-	cost 	 int
-}
 type Particle struct {
-	personalBest Score
-	score Score
+	personalBest Particle
+	velocity []float64
+	cost 	 int
 	genotype Genotype
 
 }
@@ -20,9 +16,7 @@ type Genotype = []float64
 
 type DiscreteGenotype = []int
 
-type Phenotype = struct {
-
-}
+type Phenotype = []int
 
 
 type Problem = struct {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"sort"
@@ -39,34 +40,42 @@ func discreteGenoToJobs(numJobs int, encoding DiscreteGenotype) []int {
 }
 
 
-func initialize(size int) Swarm{
+func initialize(p *Problem, size int) Swarm{
 
 	particles := make([]*Particle, size)
 
+
 	for i := range particles {
-		particles[i].score = Score{
-			position: rand.Float64(),
-			velocity: rand.Float64(),
+		geno := make(Genotype, p.numMachines * p.numJobs)
+
+		for i := range geno {
+			geno[i] = rand.Float64()
+		}
+		particles[i] = &Particle{
+			genotype: geno,
 		}
 	}
 	return particles
 }
 
+func genoToPheno(p *Problem, geno Genotype) Phenotype {
+	encoding := decodeGenotype(geno)
+	return discreteGenoToJobs(p.numJobs, encoding)
 
-func evaluateFitness(p *Problem, swarm Swarm) Score {
-	globalBest := Score{cost: math.MinInt64, position: 0.0}
+}
+
+
+func evaluateFitness(p *Problem, swarm Swarm) *Particle {
+	globalBest := &Particle{cost: math.MaxInt64}
 
 	for _, particle := range swarm {
-		encoding := decodeGenotype(particle.genotype)
-		phenotype := discreteGenoToJobs(p.numJobs, encoding)
+		phenotype := genoToPheno(p, particle.genotype)
 
-		particle.score = Score{
-			cost: cost(p, phenotype),
-			position: particle.score.position,
-		}
+		particle.cost = cost(phenoToOperations(p, phenotype))
 
-		if globalBest.cost < particle.score.cost {
-			globalBest = particle.score
+
+		if globalBest.cost > particle.cost {
+			globalBest = particle
 		}
 	}
 	return globalBest
@@ -74,11 +83,11 @@ func evaluateFitness(p *Problem, swarm Swarm) Score {
 
 
 
-func particleSwarmOptimization(p *Problem, size, iterations int){
+func particleSwarmOptimization(p *Problem, size, iterations int) []*Operation {
 
 	// Initialize the populaton
-	swarm := initialize(size)
-	var globalBest Score
+	swarm := initialize(p, size)
+	var globalBest *Particle
 
 	// Do until stopping condition
 
@@ -91,16 +100,29 @@ func particleSwarmOptimization(p *Problem, size, iterations int){
 		for _, particle := range swarm {
 			// Update personal best
 
-			if particle.score.cost > particle.personalBest.cost {
-				particle.personalBest = particle.score
+			if particle.cost < particle.personalBest.cost {
+				particle.personalBest = *particle
 			}
 
 			// Update velocity
-			particle.score.velocity = velocity(particle.score, particle.personalBest, globalBest)
+			particle.velocity = velocity(particle, globalBest)
 
 			// Update position
-			particle.score.position = particle.score.position + particle.score.velocity
+			particle.genotype = add(particle.genotype, particle.velocity)
 
 			}
+		fmt.Println("Global best", globalBest.cost)
+
 	}
+	// Find best
+
+	best := math.MaxInt64
+	bestIdx := 0
+	for i, particle := range swarm {
+		if particle.cost < best {
+			best = particle.cost
+			bestIdx = i
+		}
+	}
+	return phenoToOperations(p, genoToPheno(p, swarm[bestIdx].genotype))
 }

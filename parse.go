@@ -52,17 +52,18 @@ func parseFile(problem int) *Problem {
 	var jobs []Job
 	for scanner.Scan() {
 		jobInfo := strings.Fields(scanner.Text())
-		log.Println("jobInfo", jobInfo)
+		var job Job
 
-		for i := 0 ; i < len(jobInfo) - 1 ; i++ {
-			var job Job
+		for i := 0 ; i < len(jobInfo) - 1 ; i += 2 {
 
 			job = append(job, &WorkLoad{
 				machine: readNumber(jobInfo[i]),
 				duration: readNumber(jobInfo[i+1]),
 			})
-			jobs = append(jobs, job)
+
 		}
+		jobs = append(jobs, job)
+
 		jobInfoCount++
 		if jobInfoCount >= numJobs {
 			break
