@@ -4,75 +4,43 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"sort"
 )
-
-type GenoDecoder struct {
-	index int
-	value float64
-}
-func decodeGenotype(geno Genotype) (encoding DiscreteGenotype) {
-	genoDecoder := make([]GenoDecoder, len(geno))
-
-	for i, val := range geno {
-		genoDecoder[i] = GenoDecoder{index: i, value: val}
-	}
-
-	sort.Slice(genoDecoder, func(i, j int) bool {
-		return genoDecoder[i].value < genoDecoder[j].value
-	})
-
-	encoding = make(DiscreteGenotype, len(geno))
-
-	for i, decoder := range genoDecoder {
-		encoding[decoder.index] = i
-	}
-	return encoding
-}
-func discreteGenoToJobs(numJobs int, encoding DiscreteGenotype) []int {
-	jobs := make([]int, len(encoding))
-
-	for i, val := range encoding {
-		jobs[i] = val % numJobs
-	}
-
-	return jobs
-}
 
 
 func initialize(p *Problem, size int) Swarm{
-
 	particles := make([]*Particle, size)
 
 
 	for i := range particles {
 		geno := make(Genotype, p.numMachines * p.numJobs)
-
+		velocity := make([]float64, len(geno))
 		for i := range geno {
 			geno[i] = rand.Float64()
+			velocity[i] = rand.Float64()
 		}
 		particles[i] = &Particle{
 			genotype: geno,
+			velocity: velocity,
 		}
 	}
 	return particles
 }
 
-func genoToPheno(p *Problem, geno Genotype) Phenotype {
-	encoding := decodeGenotype(geno)
-	return discreteGenoToJobs(p.numJobs, encoding)
+func (p *Particle) evaluateFitnessValue() int {
+	decoded := decodeGenotype(p.genotype)
+	operationSequence := discreteGenoToJobs(prob.numJobs, decoded)
+	p.cost = operationSequence.makespan()
 
+	return p.cost
 }
 
 
-func evaluateFitness(p *Problem, swarm Swarm) *Particle {
+func evaluateFitness(swarm Swarm) *Particle {
 	globalBest := &Particle{cost: math.MaxInt64}
 
 	for _, particle := range swarm {
-		phenotype := genoToPheno(p, particle.genotype)
 
-		particle.cost = cost(phenoToOperations(p, phenotype))
-
+		particle.evaluateFitnessValue()
 
 		if globalBest.cost > particle.cost {
 			globalBest = particle
@@ -83,7 +51,7 @@ func evaluateFitness(p *Problem, swarm Swarm) *Particle {
 
 
 
-func particleSwarmOptimization(p *Problem, size, iterations int) []*Operation {
+func particleSwarmOptimization(p *Problem, size, iterations int) Patch {
 
 	// Initialize the populaton
 	swarm := initialize(p, size)
@@ -91,38 +59,42 @@ func particleSwarmOptimization(p *Problem, size, iterations int) []*Operation {
 
 	// Do until stopping condition
 
-	for i := 0 ; i < iterations ; i++ {
+	for i := 0; i < iterations; i++ {
 
 		// Evaluate fitness and update global best
 
-		globalBest = evaluateFitness(p, swarm)
+		thisGlobalBest := evaluateFitness(swarm)
+		if globalBest == nil {
+			globalBest = thisGlobalBest
+		}else if thisGlobalBest.cost < globalBest.cost {
+			genoCopy := make(Genotype, len(thisGlobalBest.genotype))
+			copy(genoCopy, thisGlobalBest.genotype)
+			globalBest = &Particle{cost: thisGlobalBest.cost, genotype: genoCopy}
+		}
 
 		for _, particle := range swarm {
 			// Update personal best
-
-			if particle.cost < particle.personalBest.cost {
-				particle.personalBest = *particle
+			if particle.personalBest == nil {
+				particle.personalBest = particle
+			} else if particle.cost < particle.personalBest.cost {
+				particle.personalBest = particle
 			}
 
 			// Update velocity
-			particle.velocity = velocity(particle, globalBest)
+			particle.velocity = velocity(particle, globalBest, 1.0 - float64(i) / float64(iterations))
 
 			// Update position
 			particle.genotype = add(particle.genotype, particle.velocity)
 
 			}
-		fmt.Println("Global best", globalBest.cost)
-
-	}
-	// Find best
-
-	best := math.MaxInt64
-	bestIdx := 0
-	for i, particle := range swarm {
-		if particle.cost < best {
-			best = particle.cost
-			bestIdx = i
+		if i % 50 == 0 {
+			fmt.Println("Global best", globalBest.cost)
 		}
+
 	}
-	return phenoToOperations(p, genoToPheno(p, swarm[bestIdx].genotype))
+
+	return Patch{makespan: globalBest.cost, genotype: globalBest.genotype}
+
+
+
 }
